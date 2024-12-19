@@ -58,4 +58,38 @@ func (account *Account) Create() map[string]interface{} {
 	tk := &Token{UserId: account.ID}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tk)
 	tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	account.Token = tokenString
+
+	account.Password = ""
+
+	response := u.Message(true, "Account created")
+	response["account"] = account
+	return response
+}
+
+//login func
+
+func Login(email, password string) map[string]interface{} {
+	account := &Account{}
+	err := GetDB().Table("accounts").Where("email = ?", email).First(account).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return u.Message(false, "Account not found")
+		}
+		return u.Message(false, "Connection error. Please try again")
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(password))
+	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
+		return u.Message(false, "Incorrect password")
+	}
+	account.Password = ""
+
+	tk := &Token{UserId: account.ID}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, tk)
+	tokenString, _ := token.SignedString([]byte(os.Getenv("token_password")))
+	account.Token = tokenString
+
+	resp := u.Message(true, "Logged In")
+	resp["account"] = account
+	return resp
 }
