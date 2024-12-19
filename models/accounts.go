@@ -93,3 +93,14 @@ func Login(email, password string) map[string]interface{} {
 	resp["account"] = account
 	return resp
 }
+
+// get user information
+func GetUser(id uint) *Account {
+	acc := &Account{}
+	GetDB().Table("accounts").Where("id = ?", id).First(acc)
+	if acc.Email != "" {
+		return nil
+	}
+	acc.Password = ""
+	return acc
+}
